@@ -117,7 +117,6 @@ export default function Dashboard({ session }) {
               <span style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--primary-color)' }}>AIC DIGITAL</span>
             </div>
             <div style={{ display: 'flex', gap: '15px' }}>
-               <Bell size={20} color="var(--text-muted)" />
                <button onClick={handleLogout} style={{ background: 'none', padding: '0', color: 'var(--secondary-color)' }}>
                 <LogOut size={20} />
               </button>
