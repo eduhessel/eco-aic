@@ -85,9 +85,9 @@ export default function Scanner() {
       {!scannedResult ? (
         <div className="card" style={{ padding: '1rem', borderRadius: '20px', minHeight: '400px' }}>
            <div id="reader"></div>
-           <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+           {/* <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               Use o botão da própria biblioteca para Iniciar/Parar a câmera.
-           </div>
+           </div> */}
         </div>
       ) : (
         <div className="card fade-in" style={{ borderTop: '8px solid var(--primary-color)', padding: '2rem' }}>
@@ -117,21 +117,47 @@ export default function Scanner() {
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        #reader button {
+        #reader {
+          border: none !important;
+          background: #000 !important;
+        }
+        #reader__dashboard_section_csr button {
+          width: 100% !important;
           background: var(--primary-color) !important;
           color: white !important;
           border: none !important;
-          padding: 12px 24px !important;
-          border-radius: 12px !important;
-          font-weight: 800 !important;
-          cursor: pointer !important;
-          margin: 10px !important;
+          padding: 16px !important;
+          border-radius: 14px !important;
+          font-weight: 900 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.5px !important;
+          margin: 10px 0 !important;
+          box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2) !important;
+          transition: transform 0.2s !important;
         }
-        #reader select {
-          padding: 10px !important;
-          border-radius: 8px !important;
-          border: 1px solid #ddd !important;
-          margin: 10px !important;
+        #reader__dashboard_section_csr button:active {
+          transform: scale(0.98) !important;
+        }
+        #reader__camera_selection {
+          width: 100% !important;
+          padding: 12px !important;
+          border-radius: 12px !important;
+          border: 1px solid #e2e8f0 !important;
+          font-weight: 700 !important;
+          margin-bottom: 10px !important;
+        }
+        /* Hiding labels/text to keep it clean */
+        #reader__dashboard_section_csr > div > span,
+        #reader__dashboard_section_csr > span,
+        #reader img {
+          display: none !important;
+        }
+        #reader__status_span {
+           display: none !important;
+        }
+        /* Hiding specific file input if any */
+        #reader__filescan_input {
+          display: none !important;
         }
       `}} />
     </div>

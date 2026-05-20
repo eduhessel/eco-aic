@@ -58,7 +58,7 @@ export default function Dashboard({ session }) {
           height: '100vh',
           zIndex: 10
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'center' }}>
             <div style={{ 
               background: 'linear-gradient(135deg, var(--primary-color) 0%, #1e3a8a 100%)', 
               color: 'white', 
@@ -66,7 +66,7 @@ export default function Dashboard({ session }) {
               borderRadius: '12px',
               boxShadow: '0 4px 10px rgba(30, 64, 175, 0.2)'
             }}>
-              <Box size={24} />
+              <Package size={24} />
             </div>
             <div>
               <h1 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 900, color: 'var(--primary-color)', lineHeight: 1 }}>AIC</h1>
@@ -112,7 +112,7 @@ export default function Dashboard({ session }) {
           <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ background: 'var(--primary-color)', color: 'white', padding: '6px', borderRadius: '8px' }}>
-                <Box size={18} />
+                <Package size={18} />
               </div>
               <span style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--primary-color)' }}>AIC DIGITAL</span>
             </div>
@@ -239,7 +239,7 @@ function Home({ isMobile }) {
       </header>
       
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        <StatCard title="Estoque em Loja" value={stats.pending} subtitle="Volumes pendentes" color="var(--primary-color)" icon={<Box size={24} />} isMobile={isMobile} />
+        <StatCard title="Estoque em Loja" value={stats.pending} subtitle="Volumes pendentes" color="var(--primary-color)" icon={<Package size={24} />} isMobile={isMobile} />
         <StatCard title="Entregas (Hoje)" value={stats.today} subtitle="Saídas registradas" color="#10b981" icon={<CheckCircle size={24} />} isMobile={isMobile} />
         {!isMobile && <StatCard title="Monitoramento" value="100%" subtitle="Digitalizado" color="var(--accent-color)" icon={<ShieldCheck size={24} />} isMobile={isMobile} />}
       </div>
@@ -290,7 +290,7 @@ function Home({ isMobile }) {
               <Camera size={20} /> INICIAR SCAN
             </Link>
           </div>
-          <Box size={140} style={{ position: 'absolute', right: '-30px', bottom: '-30px', opacity: 0.05, transform: 'rotate(-20deg)' }} />
+          <Package size={140} style={{ position: 'absolute', right: '-30px', bottom: '-30px', opacity: 0.05, transform: 'rotate(-20deg)' }} />
         </div>
       </div>
     </div>
