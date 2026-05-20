@@ -142,52 +142,55 @@ export default function Scanner() {
       </header>
 
       {!scannedResult ? (
-        <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-          <div id="reader"></div>
-          <div style={{ padding: '20px', textAlign: 'center', background: '#f8f9fa' }}>
-            <Camera size={24} style={{ marginBottom: '8px', color: 'var(--primary-color)' }} />
-            <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>Aponte para o código de barras</p>
+        <div className="card" style={{ padding: '0', overflow: 'hidden', border: 'none' }}>
+          <div id="reader" style={{ background: '#000' }}></div>
+          <div style={{ padding: '1.5rem', textAlign: 'center', background: 'white' }}>
+            <Camera size={28} style={{ marginBottom: '10px', color: 'var(--primary-color)' }} />
+            <p style={{ fontWeight: 700, fontSize: '1rem' }}>Aponte para o código</p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>O enquadramento será automático</p>
           </div>
         </div>
       ) : (
-        <div className="card" style={{ borderTop: '5px solid var(--primary-color)' }}>
+        <div className="card" style={{ borderTop: '6px solid var(--primary-color)', padding: '1.5rem' }}>
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between',
             alignItems: 'center',
             background: '#f1f8f1', 
-            padding: '1.2rem', 
-            borderRadius: '10px',
+            padding: '1.25rem', 
+            borderRadius: '12px',
             marginBottom: '1.5rem',
             color: '#1b5e20'
           }}>
              <div>
-              <p style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', opacity: 0.7 }}>Código de Barras</p>
-              <p style={{ fontWeight: 800, fontSize: '1.1rem' }}>{scannedResult}</p>
+              <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.6, letterSpacing: '0.5px' }}>Código Detectado</p>
+              <p style={{ fontWeight: 800, fontSize: '1.2rem' }}>{scannedResult}</p>
             </div>
-            <CheckCircle size={24} />
+            <CheckCircle size={28} />
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <label style={{ fontWeight: 700 }}>Nome do Cliente</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                <label style={{ fontWeight: 800, fontSize: '0.95rem' }}>Nome do Cliente</label>
                 <button 
                   type="button" 
                   onClick={handleOCR} 
                   disabled={ocrLoading}
                   style={{ 
-                    background: 'none', 
+                    background: '#eef2ee', 
                     color: 'var(--primary-color)', 
-                    fontSize: '0.8rem', 
+                    fontSize: '0.75rem', 
                     display: 'flex', 
                     alignItems: 'center', 
-                    gap: '4px',
-                    fontWeight: 700
+                    gap: '6px',
+                    fontWeight: 800,
+                    padding: '6px 12px',
+                    borderRadius: '20px'
                   }}
                 >
                   {ocrLoading ? <Loader2 size={14} className="spin" /> : <ScanText size={14} />}
-                  Auto-Preencher via OCR
+                  OCR Inteligente
                 </button>
               </div>
               <input 
@@ -195,29 +198,29 @@ export default function Scanner() {
                 required
                 value={packageData.client_name}
                 onChange={(e) => setPackageData({...packageData, client_name: e.target.value})}
-                placeholder="Escaneie a etiqueta ou digite aqui"
-                style={{ width: '100%', padding: '14px', border: '1px solid #ddd', borderRadius: '10px', fontSize: '1rem' }}
+                placeholder="Escaneie a etiqueta ou digite"
+                style={{ width: '100%', padding: '16px', border: '1px solid #ddd', borderRadius: '12px', fontSize: '1rem' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Localização (Prateleira)</label>
+              <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: 800, fontSize: '0.95rem' }}>Localização (Prateleira)</label>
               <input 
                 type="text"
                 required
                 value={packageData.shelf_location}
                 onChange={(e) => setPackageData({...packageData, shelf_location: e.target.value})}
                 placeholder="Ex: B-12"
-                style={{ width: '100%', padding: '14px', border: '1px solid #ddd', borderRadius: '10px', fontSize: '1rem' }}
+                style={{ width: '100%', padding: '16px', border: '1px solid #ddd', borderRadius: '12px', fontSize: '1rem' }}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
-              <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 2 }}>
-                {loading ? 'Salvando...' : 'Confirmar Tudo'}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '0.5rem' }}>
+              <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 1, padding: '16px' }}>
+                {loading ? 'Salvando...' : 'Salvar Pacote'}
               </button>
-              <button type="button" onClick={resetForm} className="btn-outline" style={{ flex: 1 }}>
-                <RefreshCw size={18} />
+              <button type="button" onClick={resetForm} className="btn-outline" style={{ width: '60px', padding: '0' }}>
+                <RefreshCw size={24} />
               </button>
             </div>
           </form>

@@ -40,59 +40,99 @@ export default function PackageList() {
   return (
     <div className="container" style={{ maxWidth: '800px' }}>
       <header style={{ marginBottom: '2rem' }}>
-        <h1>Localizar Pacote</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Busca rápida por nome, código ou localização.</p>
+        <h1 style={{ fontWeight: 800 }}>Localizar Pacote</h1>
+        <p style={{ color: 'var(--text-muted)' }}>Busca instantânea para entrega rápida.</p>
       </header>
 
-      <div className="input-group" style={{ marginBottom: '2rem' }}>
-        <Search size={20} className="icon" style={{ left: '15px' }} />
+      <div className="search-box" style={{ marginBottom: '2rem' }}>
+        <Search size={22} className="search-icon" />
         <input 
           type="text" 
-          placeholder="Buscar cliente ou código de rastreio..." 
+          placeholder="Nome do cliente ou código..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ width: '100%', padding: '15px 15px 15px 50px', fontSize: '1rem' }}
         />
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {loading ? <p>Carregando...</p> : (
+        {loading ? <div className="loading">Carregando pacotes...</div> : (
           filteredPackages.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-              <p style={{ color: 'var(--text-muted)' }}>Nenhum pacote pendente encontrado.</p>
+              <Package size={48} color="#ddd" style={{ marginBottom: '1rem' }} />
+              <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Nenhum pacote pendente.</p>
             </div>
           ) : filteredPackages.map(pkg => (
-            <div key={pkg.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ margin: 0 }}>{pkg.client_name}</h3>
-                <code style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{pkg.tracking_code}</code>
-                <div style={{ display: 'flex', gap: '15px', marginTop: '10px', fontSize: '0.85rem' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <MapPin size={14} color="var(--accent-color)" /> {pkg.shelf_location}
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)' }}>
-                    <Clock size={14} /> {new Date(pkg.arrival_date).toLocaleDateString()}
-                  </span>
+            <div key={pkg.id} className="card" style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '1.2rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>{pkg.client_name}</h3>
+                  <code style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: '#f5f5f5', padding: '2px 6px', borderRadius: '4px' }}>
+                    {pkg.tracking_code}
+                  </code>
+                </div>
+                <div style={{ 
+                  background: '#fff3e0', 
+                  color: '#e65100', 
+                  padding: '4px 10px', 
+                  borderRadius: '20px', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 800,
+                  textTransform: 'uppercase'
+                }}>
+                  {pkg.shelf_location}
                 </div>
               </div>
-              
-              <button 
-                onClick={() => handleDelivery(pkg.id)}
-                className="btn-outline" 
-                style={{ borderColor: '#2e7d32', color: '#2e7d32', padding: '8px 16px' }}
-              >
-                <CheckCircle size={18} style={{ marginRight: '5px' }} /> Entregar
-              </button>
+
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                paddingTop: '1rem',
+                borderTop: '1px solid #f0f0f0'
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  <Clock size={16} /> {new Date(pkg.arrival_date).toLocaleDateString()}
+                </span>
+                
+                <button 
+                  onClick={() => handleDelivery(pkg.id)}
+                  style={{ 
+                    backgroundColor: '#e8f5e9', 
+                    color: '#2e7d32', 
+                    padding: '10px 20px',
+                    borderRadius: '12px',
+                    fontSize: '0.9rem',
+                    fontWeight: 800
+                  }}
+                >
+                  <CheckCircle size={18} /> Entregar
+                </button>
+              </div>
             </div>
           ))
         )}
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .input-group { position: relative; display: flex; align-items: center; }
-        .input-group .icon { position: absolute; color: var(--text-muted); }
-        .input-group input { border: 1px solid #ddd; borderRadius: 12px; outline: none; transition: var(--transition); }
-        .input-group input:focus { border-color: var(--primary-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .search-box { position: relative; }
+        .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-box input { 
+          width: 100%; 
+          padding: 16px 16px 16px 52px; 
+          border: 1px solid #ddd; 
+          border-radius: 14px; 
+          outline: none; 
+          font-size: 1rem;
+          transition: var(--transition);
+        }
+        .search-box input:focus { 
+          border-color: var(--primary-color); 
+          box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+        }
       `}} />
     </div>
   )

@@ -6,9 +6,9 @@
   --bg-color: #f9fbfa;
   --text-color: #1a1a1a;
   --text-muted: #666;
-  --border-radius: 12px;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  --transition: all 0.3s ease;
+  --border-radius: 14px;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -16,18 +16,20 @@
   padding: 0;
   box-sizing: border-box;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background-color: var(--bg-color);
   color: var(--text-color);
-  line-height: 1.6;
+  line-height: 1.5;
+  overflow-x: hidden;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 1.5rem;
 }
 
 button {
@@ -35,42 +37,67 @@ button {
   border: none;
   border-radius: var(--border-radius);
   padding: 12px 24px;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.95rem;
   transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-primary {
   background-color: var(--primary-color);
   color: white;
+  box-shadow: 0 4px 12px rgba(45, 90, 39, 0.2);
 }
 
-.btn-primary:hover {
-  background-color: var(--primary-light);
-  transform: translateY(-2px);
+.btn-primary:active {
+  transform: scale(0.96);
 }
 
 .btn-outline {
-  background-color: transparent;
-  border: 2px solid var(--primary-color);
+  background-color: white;
+  border: 1px solid #e0eadd;
   color: var(--primary-color);
 }
 
-.btn-outline:hover {
-  background-color: var(--primary-color);
-  color: white;
+.btn-outline:active {
+  background-color: #f0f4f0;
 }
 
-/* Glassmorphism card */
 .card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: white;
   border-radius: var(--border-radius);
-  padding: 24px;
+  padding: 1.5rem;
   box-shadow: var(--shadow);
+  border: 1px solid #f0f0f0;
 }
 
 h1, h2, h3 {
+  color: var(--text-color);
+  letter-spacing: -0.5px;
+}
+
+.loading {
+  display: flex;
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
   color: var(--primary-color);
-  margin-bottom: 1rem;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.4rem; }
+  
+  .card {
+    padding: 1.25rem;
+  }
 }
