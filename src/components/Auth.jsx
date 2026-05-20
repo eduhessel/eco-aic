@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { Box, Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Package, Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react'
 
 export default function Auth() {
   const [loading, setLoading] = useState(false)
@@ -58,7 +58,7 @@ export default function Auth() {
             margin: '0 auto 15px auto',
             boxShadow: '0 8px 16px rgba(30, 64, 175, 0.3)'
           }}>
-            <Box size={32} />
+            <Package size={32} />
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--primary-color)', marginBottom: '4px' }}>AIC DIGITAL</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.5px' }}>SISTEMA DE GESTÃO CORPORATIVA</p>
@@ -95,12 +95,16 @@ export default function Auth() {
           </button>
         </form>
 
-        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <div style={{ marginTop: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, margin: 0 }}>
+            {isSignUp ? 'Já possui uma conta?' : 'Não tem acesso?'}
+          </p>
           <button 
+            type="button"
             onClick={() => setIsSignUp(!isSignUp)}
-            style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', padding: '5px' }}
           >
-            {isSignUp ? 'JÁ POSSUO ACESSO' : 'SOLICITAR NOVO ACESSO'}
+            {isSignUp ? 'JÁ POSSUO ACESSO' : 'CRIE SUA CONTA'}
           </button>
         </div>
 
