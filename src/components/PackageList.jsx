@@ -19,15 +19,17 @@ export default function PackageList() {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [showScanner, setShowScanner] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
   const [cameraLoading, setCameraLoading] = useState(false)
-  const html5QrCode = useRef(null)
+  const [cameraError, setCameraError] = useState(null)
+  const scannerRef = useRef(null)
 
   useEffect(() => {
     fetchPackages()
     return () => {
-      if (html5QrCode.current) {
-        html5QrCode.current.stop().catch(() => {})
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {}).finally(() => {
+          scannerRef.current = null
+        })
       }
     }
   }, [])
@@ -56,43 +58,66 @@ export default function PackageList() {
   const startScanner = async () => {
     if (cameraLoading) return
     setCameraLoading(true)
+    setCameraError(null)
 
     try {
       const readerElement = document.getElementById('list-reader')
       if (!readerElement) throw new Error('Elemento não encontrado')
 
-      if (html5QrCode.current) {
-        await html5QrCode.current.stop().catch(() => {})
+      if (scannerRef.current) {
+        await scannerRef.current.stop().catch(() => {})
       }
 
-      html5QrCode.current = new Html5Qrcode('list-reader')
+      scannerRef.current = new Html5Qrcode('list-reader')
       
-      await html5QrCode.current.start(
-        { facingMode: "environment" },
-        {
-          fps: 20,
-          qrbox: { width: 250, height: 120 },
-          aspectRatio: 1.0
-        },
-        (decodedText) => {
-          setSearchTerm(decodedText)
-          stopScanner()
-          setShowScanner(false)
-        }
-      )
-      setIsScanning(true)
+      const config = {
+        fps: 20,
+        qrbox: { width: 250, height: 125 },
+        aspectRatio: 1.0
+      }
+
+      try {
+        await scannerRef.current.start(
+          { facingMode: "environment" },
+          config,
+          (decodedText) => {
+            setSearchTerm(decodedText)
+            stopScanner()
+            setShowScanner(false)
+          }
+        )
+        setIsScanning(true)
+      } catch (err) {
+        console.warn('Erro ao iniciar lista modo ambiente, tentando genérico...', err)
+        await scannerRef.current.start(
+          { facingMode: "user" }, // Last resort fallback
+          config,
+          (decodedText) => {
+            setSearchTerm(decodedText)
+            stopScanner()
+            setShowScanner(false)
+          }
+        )
+        setIsScanning(true)
+      }
     } catch (err) {
       console.error('Erro no scanner da lista:', err)
+      setCameraError(`Erro: ${err.message}`)
       setIsScanning(false)
+      if (scannerRef.current) {
+        scannerRef.current.clear()
+        scannerRef.current = null
+      }
     } finally {
       setCameraLoading(false)
     }
   }
 
   const stopScanner = async () => {
-    if (html5QrCode.current) {
+    if (scannerRef.current) {
       try {
-        await html5QrCode.current.stop()
+        await scannerRef.current.stop()
+        scannerRef.current = null
         setIsScanning(false)
       } catch (err) {
         console.error('Erro ao parar scanner da lista:', err)
@@ -158,7 +183,7 @@ export default function PackageList() {
       {showScanner && (
         <div className="card fade-in" style={{ padding: '0', overflow: 'hidden', marginBottom: '2rem', border: '5px solid var(--primary-color)' }}>
           <div id="list-reader" style={{ minHeight: '200px', background: '#000' }}>
-            {!isScanning && (
+            {!isScanning && !cameraError && (
               <div style={{ padding: '2rem', textAlign: 'center', background: '#0f172a', color: 'white' }}>
                  <p style={{ fontWeight: 800, marginBottom: '15px' }}>PRONTO PARA BUSCAR POR CÓDIGO</p>
                  <button 
@@ -169,6 +194,15 @@ export default function PackageList() {
                 >
                     {cameraLoading ? <Loader2 size={18} className="spin" /> : <Play size={18} />}
                     {cameraLoading ? ' LIGANDO...' : ' ATIVAR LEITURA'}
+                 </button>
+              </div>
+            )}
+            {cameraError && (
+              <div style={{ padding: '2rem', textAlign: 'center', background: '#0f172a', color: 'white' }}>
+                 <AlertCircle size={32} color="#ef4444" style={{ marginBottom: '10px' }} />
+                 <p style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '15px' }}>{cameraError}</p>
+                 <button onClick={startScanner} className="btn-primary" style={{ margin: '0 auto', background: 'white', color: '#0f172a' }}>
+                    <RotateCcw size={18} /> REPETIR
                  </button>
               </div>
             )}

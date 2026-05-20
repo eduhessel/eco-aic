@@ -26,69 +26,78 @@ export default function Scanner() {
   const [selectedCamera, setSelectedCamera] = useState('')
   const [isScanning, setIsScanning] = useState(false)
   const [cameraLoading, setCameraLoading] = useState(false)
-  const html5QrCode = useRef(null)
+  const [cameraError, setCameraError] = useState(null)
+  
+  const scannerRef = useRef(null)
   const fileInputRef = useRef(null)
 
   useEffect(() => {
-    // Get available cameras
+    // Populate camera list but don't start yet
     Html5Qrcode.getCameras().then((devices) => {
       if (devices && devices.length) {
         setCameras(devices)
-        
-        // Find back camera by label or take the last one
         const backCamera = devices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('traseira') ||
-          device.label.toLowerCase().includes('rear')
+          /back|rear|traseir/i.test(device.label)
         )
-        
         setSelectedCamera(backCamera ? backCamera.id : devices[devices.length - 1].id)
       }
     }).catch(err => {
-      console.error(err)
-      setMessage('Erro ao acessar câmeras. Verifique as permissões do navegador.')
+      console.error('Erro getCameras:', err)
+      setCameraError('Permissão de câmera negada ou não encontrada.')
     })
 
     return () => {
-      if (html5QrCode.current) {
-        html5QrCode.current.stop().catch(() => {})
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {}).finally(() => {
+          scannerRef.current = null
+        })
       }
     }
   }, [])
 
   const startScanner = async () => {
     if (cameraLoading) return
-    setMessage('')
     setCameraLoading(true)
+    setCameraError(null)
+    setMessage('')
 
     try {
-      // Ensure element exists
       const readerElement = document.getElementById('reader')
-      if (!readerElement) throw new Error('Elemento de visualização não encontrado.')
-
-      if (html5QrCode.current) {
-        await html5QrCode.current.stop().catch(() => {})
+      if (!readerElement) {
+        throw new Error('Área do scanner não montada.')
       }
-      
-      html5QrCode.current = new Html5Qrcode('reader')
+
+      // Cleanup previous instance if any
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop()
+        } catch (e) {
+          // ignore stop errors
+        }
+      }
+
+      scannerRef.current = new Html5Qrcode('reader')
       
       const config = {
         fps: 20,
-        qrbox: { width: 280, height: 150 },
-        aspectRatio: 1.0
+        qrbox: { width: 280, height: 160 },
+        aspectRatio: 1.0,
       }
 
-      // Try starting with selected ID, fallback to environment mode
+      // Priority 1: Use selected camera ID
+      // Priority 2: Use facingMode environment
       try {
-        await html5QrCode.current.start(
-          selectedCamera || { facingMode: "environment" },
+        const cameraConfig = selectedCamera ? selectedCamera : { facingMode: "environment" }
+        await scannerRef.current.start(
+          cameraConfig,
           config,
           (decodedText) => onScanSuccess(decodedText)
         )
         setIsScanning(true)
-      } catch (innerErr) {
-        console.warn('Falha com ID, tentando modo ambiente...', innerErr)
-        await html5QrCode.current.start(
+      } catch (err) {
+        console.warn('Falha ao iniciar com config primária, tentando fallback...', err)
+        // Fallback to environment
+        await scannerRef.current.start(
           { facingMode: "environment" },
           config,
           (decodedText) => onScanSuccess(decodedText)
@@ -96,22 +105,27 @@ export default function Scanner() {
         setIsScanning(true)
       }
     } catch (err) {
-      console.error('Erro fatal ao iniciar scanner:', err)
-      setMessage(`Erro na câmera: ${err.message || 'Verifique as permissões'}`)
+      console.error('Erro ao ligar câmera:', err)
+      setCameraError(`Erro: ${err.message || 'Câmera indisponível'}`)
       setIsScanning(false)
+      if (scannerRef.current) {
+        scannerRef.current.clear()
+        scannerRef.current = null
+      }
     } finally {
       setCameraLoading(false)
     }
   }
 
   const stopScanner = async () => {
-    if (html5QrCode.current) {
+    if (scannerRef.current) {
       try {
-        await html5QrCode.current.stop()
+        await scannerRef.current.stop()
+        scannerRef.current = null
         setIsScanning(false)
       } catch (err) {
-        console.error('Erro ao parar scanner:', err)
-        setIsScanning(false) // Force state update
+        console.error('Erro ao parar:', err)
+        setIsScanning(false)
       }
     }
   }
@@ -351,7 +365,7 @@ export default function Scanner() {
         </div>
       )}
 
-      {message && (
+      {message && !cameraError && (
         <div className="fade-in" style={{ 
           marginTop: '2rem', 
           padding: '1.25rem', 
@@ -365,6 +379,25 @@ export default function Scanner() {
           border: `1px solid ${message.includes('Erro') ? '#fee2e2' : '#dcfce7'}`
         }}>
           {message}
+        </div>
+      )}
+
+      {cameraError && (
+        <div className="fade-in" style={{ 
+          marginTop: '2rem', 
+          padding: '1.5rem', 
+          borderRadius: '16px', 
+          backgroundColor: '#0f172a',
+          color: 'white',
+          textAlign: 'center',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+        }}>
+          <AlertCircle size={40} color="#ef4444" style={{ marginBottom: '15px' }} />
+          <p style={{ fontWeight: 800, marginBottom: '10px' }}>OPERAÇÃO INTERROMPIDA</p>
+          <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '20px' }}>{cameraError}</p>
+          <button onClick={startScanner} className="btn-primary" style={{ background: 'white', color: '#0f172a', margin: '0 auto' }}>
+            <RotateCcw size={18} /> TENTAR NOVAMENTE
+          </button>
         </div>
       )}
     </div>
