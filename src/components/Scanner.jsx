@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import { Html5QrcodeScanner } from 'html5-qrcode'
+import React, { useEffect, useState, useRef } from 'react'
+import { Html5Qrcode } from 'html5-qrcode'
 import { supabase } from '../supabaseClient'
 import { 
   CheckCircle, 
   RefreshCw, 
-  Search,
-  ChevronLeft
+  Camera,
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react'
 
 export default function Scanner() {
@@ -13,30 +14,107 @@ export default function Scanner() {
   const [message, setMessage] = useState('')
   const [packageData, setPackageData] = useState({ client_name: '', shelf_location: '' })
   const [loading, setLoading] = useState(false)
+  const [cameras, setCameras] = useState([])
+  const [currentCameraId, setCurrentCameraId] = useState(null)
+  const [isScannerInitialised, setIsScannerInitialised] = useState(false)
+  const [error, setError] = useState(null)
+  
+  const scannerRef = useRef(null)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
-    // Only initialize if we don't have a result yet
-    if (!scannedResult) {
-      const scanner = new Html5QrcodeScanner('reader', {
-        fps: 20,
-        qrbox: { width: 250, height: 150 },
-        rememberLastUsedCamera: true,
-        supportedScanTypes: [0] // Camera only
-      });
+    mountedRef.current = true;
+    getCameras();
+    return () => {
+      mountedRef.current = false;
+      stopScanner();
+    }
+  }, [])
 
-      scanner.render((decodedText) => {
-        setScannedResult(decodedText);
-        scanner.clear();
-        checkExistingPackage(decodedText);
-      }, (error) => {
-        // quiet error
-      });
+  const getCameras = async () => {
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length > 0) {
+        setCameras(devices);
+        // Prefer back camera
+        const backCamera = devices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('traseira') ||
+          device.label.toLowerCase().includes('0')
+        );
+        setCurrentCameraId(backCamera ? backCamera.id : devices[0].id);
+      } else {
+        setError('Nenhuma câmera encontrada. Verifique as permissões.');
+      }
+    } catch (err) {
+      console.error('Error getting cameras', err);
+      setError('Erro ao acessar câmeras: ' + err.message);
+    }
+  }
 
-      return () => {
-        scanner.clear().catch(e => console.error(e));
+  const startScanner = async (cameraId) => {
+    if (scannerRef.current) {
+      await stopScanner();
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+    scannerRef.current = html5QrCode;
+
+    try {
+      setError(null);
+      await html5QrCode.start(
+        cameraId,
+        {
+          fps: 15,
+          qrbox: { width: 250, height: 150 },
+          aspectRatio: 1.0
+        },
+        (decodedText) => {
+          setScannedResult(decodedText);
+          stopScanner();
+          checkExistingPackage(decodedText);
+        },
+        (errorMessage) => {
+          // ignore constant scan errors
+        }
+      );
+      if (mountedRef.current) setIsScannerInitialised(true);
+    } catch (err) {
+      console.error('Scanner start error:', err);
+      if (mountedRef.current) {
+        setError(`Falha ao iniciar: ${err.message}`);
+        setIsScannerInitialised(false);
       }
     }
-  }, [scannedResult])
+  }
+
+  const stopScanner = async () => {
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      try {
+        await scannerRef.current.stop();
+        if (mountedRef.current) setIsScannerInitialised(false);
+      } catch (err) {
+        console.error('Stop error', err);
+      }
+    }
+  }
+
+  const switchCamera = () => {
+    if (cameras.length < 2) return;
+    const currentIndex = cameras.findIndex(c => c.id === currentCameraId);
+    const nextIndex = (currentIndex + 1) % cameras.length;
+    const nextCameraId = cameras[nextIndex].id;
+    setCurrentCameraId(nextCameraId);
+    if (isScannerInitialised) {
+      startScanner(nextCameraId);
+    }
+  }
+
+  useEffect(() => {
+    if (!scannedResult && !isScannerInitialised && currentCameraId && !error) {
+      startScanner(currentCameraId);
+    }
+  }, [scannedResult, isScannerInitialised, currentCameraId, error])
 
   const checkExistingPackage = async (code) => {
     const { data } = await supabase.from('packages').select('*').eq('tracking_code', code).single();
@@ -51,7 +129,7 @@ export default function Scanner() {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from('packages').upsert([{
+      const { error: upsertError } = await supabase.from('packages').upsert([{
         tracking_code: scannedResult,
         client_name: packageData.client_name.toUpperCase(),
         shelf_location: packageData.shelf_location.toUpperCase(),
@@ -59,11 +137,11 @@ export default function Scanner() {
         updated_at: new Date().toISOString()
       }], { onConflict: 'tracking_code' });
       
-      if (error) throw error;
+      if (upsertError) throw upsertError;
       setMessage('CADASTRADO COM SUCESSO!');
       setTimeout(() => resetForm(), 1500);
-    } catch (error) {
-      setMessage(`Erro: ${error.message}`);
+    } catch (err) {
+      setMessage(`Erro: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -73,6 +151,8 @@ export default function Scanner() {
     setScannedResult(null);
     setPackageData({ client_name: '', shelf_location: '' });
     setMessage('');
+    setError(null);
+    setIsScannerInitialised(false);
   }
 
   return (
@@ -83,35 +163,59 @@ export default function Scanner() {
       </header>
 
       {!scannedResult ? (
-        <div className="card" style={{ padding: '1rem', borderRadius: '20px', minHeight: '400px' }}>
-           <div id="reader"></div>
-           {/* <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Use o botão da própria biblioteca para Iniciar/Parar a câmera.
-           </div> */}
+        <div className="card" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', position: 'relative', background: '#000', minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+           <div id="reader" style={{ width: '100%', flex: 1 }}></div>
+           
+           {error && (
+             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', color: 'white', background: 'rgba(0,0,0,0.8)', zIndex: 10 }}>
+               <AlertTriangle size={48} color="#ef4444" style={{ marginBottom: '1rem' }} />
+               <p style={{ fontWeight: 600 }}>{error}</p>
+               <button onClick={() => { setError(null); getCameras(); }} style={{ marginTop: '1rem', background: '#fff', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 800 }}>TENTAR NOVAMENTE</button>
+             </div>
+           )}
+
+           <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+              {cameras.length > 1 && (
+                <button onClick={switchCamera} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#3b82f6', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 800, fontSize: '0.8rem' }}>
+                  <Camera size={18} /> ALTERNAR CÂMERA ({cameras.length})
+                </button>
+              )}
+           </div>
         </div>
       ) : (
         <div className="card fade-in" style={{ borderTop: '8px solid var(--primary-color)', padding: '2rem' }}>
-          <div style={{ background: '#eff6ff', padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ background: '#eff6ff', padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
              <div>
                <p style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--primary-color)' }}>CÓDIGO LIDO</p>
-               <h2 style={{ margin: 0, fontFamily: 'monospace' }}>{scannedResult}</h2>
+               <h2 style={{ margin: 0, fontFamily: 'monospace', letterSpacing: '1px' }}>{scannedResult}</h2>
              </div>
              <CheckCircle size={32} color="var(--primary-color)" />
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <input type="text" required value={packageData.client_name} onChange={e => setPackageData({...packageData, client_name: e.target.value})} placeholder="NOME DO CLIENTE" style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }} />
-            <input type="text" required value={packageData.shelf_location} onChange={e => setPackageData({...packageData, shelf_location: e.target.value})} placeholder="LOCALIZAÇÃO (EX: B-10)" style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }} />
-            <div style={{ display: 'flex', gap: '12px' }}>
-               <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 1, padding: '18px' }}>{loading ? 'SALVANDO...' : 'CONFIRMAR'}</button>
-               <button type="button" onClick={resetForm} className="btn-outline" style={{ padding: '18px' }}><RefreshCw size={24} /></button>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginLeft: '4px' }}>NOME DO CLIENTE</label>
+              <input type="text" required value={packageData.client_name} onChange={e => setPackageData({...packageData, client_name: e.target.value})} placeholder="DIGITE O NOME" style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '4px', fontWeight: 600 }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginLeft: '4px' }}>LOCALIZAÇÃO NO ESTOQUE</label>
+              <input type="text" required value={packageData.shelf_location} onChange={e => setPackageData({...packageData, shelf_location: e.target.value})} placeholder="EX: B-10" style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '4px', fontWeight: 600 }} />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '12px', marginTop: '1rem' }}>
+               <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 1, padding: '20px', borderRadius: '16px', fontSize: '1rem' }}>
+                 {loading ? 'SALVANDO...' : 'CONFIRMAR ENTRADA'}
+               </button>
+               <button type="button" onClick={resetForm} className="btn-outline" style={{ padding: '20px', borderRadius: '16px' }}>
+                 <RotateCcw size={24} />
+               </button>
             </div>
           </form>
         </div>
       )}
 
       {message && (
-        <div style={{ marginTop: '2rem', padding: '1rem', borderRadius: '12px', background: '#F0FDF4', color: '#166534', textAlign: 'center', fontWeight: 800 }}>
+        <div className="fade-in" style={{ marginTop: '2rem', padding: '1.2rem', borderRadius: '16px', background: message.includes('Erro') ? '#FEF2F2' : '#F0FDF4', color: message.includes('Erro') ? '#991B1B' : '#166534', textAlign: 'center', fontWeight: 800, border: '1px solid currentColor', opacity: 0.9 }}>
           {message}
         </div>
       )}
@@ -121,43 +225,10 @@ export default function Scanner() {
           border: none !important;
           background: #000 !important;
         }
-        #reader__dashboard_section_csr button {
+        #reader video {
           width: 100% !important;
-          background: var(--primary-color) !important;
-          color: white !important;
-          border: none !important;
-          padding: 16px !important;
-          border-radius: 14px !important;
-          font-weight: 900 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.5px !important;
-          margin: 10px 0 !important;
-          box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2) !important;
-          transition: transform 0.2s !important;
-        }
-        #reader__dashboard_section_csr button:active {
-          transform: scale(0.98) !important;
-        }
-        #reader__camera_selection {
-          width: 100% !important;
-          padding: 12px !important;
-          border-radius: 12px !important;
-          border: 1px solid #e2e8f0 !important;
-          font-weight: 700 !important;
-          margin-bottom: 10px !important;
-        }
-        /* Hiding labels/text to keep it clean */
-        #reader__dashboard_section_csr > div > span,
-        #reader__dashboard_section_csr > span,
-        #reader img {
-          display: none !important;
-        }
-        #reader__status_span {
-           display: none !important;
-        }
-        /* Hiding specific file input if any */
-        #reader__filescan_input {
-          display: none !important;
+          height: 100% !important;
+          object-fit: cover !important;
         }
       `}} />
     </div>
