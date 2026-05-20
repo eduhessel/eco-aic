@@ -234,7 +234,7 @@ function Home({ isMobile }) {
   return (
     <div className="container" style={{ maxWidth: '1100px' }}>
       <header style={{ marginBottom: isMobile ? '2rem' : '3.5rem' }}>
-        <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', marginBottom: '0.5rem' }}>Painel Executivo</h1>
+        <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.5rem', marginBottom: '0.5rem' }}>Painel gerencial</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: isMobile ? '0.95rem' : '1.1rem', fontWeight: 500 }}>Monitoramento e logística digital AIC Materiais.</p>
       </header>
       
