@@ -10,7 +10,8 @@ import {
   Camera, 
   X,
   Play,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from 'lucide-react'
 
 export default function PackageList() {
@@ -19,13 +20,14 @@ export default function PackageList() {
   const [loading, setLoading] = useState(true)
   const [showScanner, setShowScanner] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
+  const [cameraLoading, setCameraLoading] = useState(false)
   const html5QrCode = useRef(null)
 
   useEffect(() => {
     fetchPackages()
     return () => {
-      if (html5QrCode.current && isScanning) {
-        stopScanner()
+      if (html5QrCode.current) {
+        html5QrCode.current.stop().catch(() => {})
       }
     }
   }, [])
@@ -52,9 +54,19 @@ export default function PackageList() {
   }
 
   const startScanner = async () => {
-    html5QrCode.current = new Html5Qrcode('list-reader')
-    setIsScanning(true)
+    if (cameraLoading) return
+    setCameraLoading(true)
+
     try {
+      const readerElement = document.getElementById('list-reader')
+      if (!readerElement) throw new Error('Elemento não encontrado')
+
+      if (html5QrCode.current) {
+        await html5QrCode.current.stop().catch(() => {})
+      }
+
+      html5QrCode.current = new Html5Qrcode('list-reader')
+      
       await html5QrCode.current.start(
         { facingMode: "environment" },
         {
@@ -66,22 +78,25 @@ export default function PackageList() {
           setSearchTerm(decodedText)
           stopScanner()
           setShowScanner(false)
-        },
-        (errorMessage) => {}
+        }
       )
+      setIsScanning(true)
     } catch (err) {
-      console.error(err)
+      console.error('Erro no scanner da lista:', err)
       setIsScanning(false)
+    } finally {
+      setCameraLoading(false)
     }
   }
 
   const stopScanner = async () => {
-    if (html5QrCode.current && isScanning) {
+    if (html5QrCode.current) {
       try {
         await html5QrCode.current.stop()
         setIsScanning(false)
       } catch (err) {
-        console.error(err)
+        console.error('Erro ao parar scanner da lista:', err)
+        setIsScanning(false)
       }
     }
   }
@@ -146,8 +161,14 @@ export default function PackageList() {
             {!isScanning && (
               <div style={{ padding: '2rem', textAlign: 'center', background: '#0f172a', color: 'white' }}>
                  <p style={{ fontWeight: 800, marginBottom: '15px' }}>PRONTO PARA BUSCAR POR CÓDIGO</p>
-                 <button onClick={startScanner} className="btn-primary" style={{ margin: '0 auto', background: 'white', color: '#0f172a' }}>
-                    <Play size={18} /> ATIVAR LEITURA
+                 <button 
+                  onClick={startScanner} 
+                  className="btn-primary" 
+                  disabled={cameraLoading}
+                  style={{ margin: '0 auto', background: 'white', color: '#0f172a' }}
+                >
+                    {cameraLoading ? <Loader2 size={18} className="spin" /> : <Play size={18} />}
+                    {cameraLoading ? ' LIGANDO...' : ' ATIVAR LEITURA'}
                  </button>
               </div>
             )}

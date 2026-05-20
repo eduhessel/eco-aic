@@ -25,7 +25,7 @@ export default function Scanner() {
   const [cameras, setCameras] = useState([])
   const [selectedCamera, setSelectedCamera] = useState('')
   const [isScanning, setIsScanning] = useState(false)
-  
+  const [cameraLoading, setCameraLoading] = useState(false)
   const html5QrCode = useRef(null)
   const fileInputRef = useRef(null)
 
@@ -34,53 +34,84 @@ export default function Scanner() {
     Html5Qrcode.getCameras().then((devices) => {
       if (devices && devices.length) {
         setCameras(devices)
-        setSelectedCamera(devices[devices.length - 1].id) // Default to back camera
+        
+        // Find back camera by label or take the last one
+        const backCamera = devices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('traseira') ||
+          device.label.toLowerCase().includes('rear')
+        )
+        
+        setSelectedCamera(backCamera ? backCamera.id : devices[devices.length - 1].id)
       }
     }).catch(err => {
-      setMessage('Erro ao acessar câmeras. Verifique as permissões.')
+      console.error(err)
+      setMessage('Erro ao acessar câmeras. Verifique as permissões do navegador.')
     })
 
     return () => {
-      if (html5QrCode.current && isScanning) {
-        stopScanner()
+      if (html5QrCode.current) {
+        html5QrCode.current.stop().catch(() => {})
       }
     }
   }, [])
 
   const startScanner = async () => {
-    if (!selectedCamera) return
-    
-    html5QrCode.current = new Html5Qrcode('reader')
-    setIsScanning(true)
+    if (cameraLoading) return
     setMessage('')
+    setCameraLoading(true)
 
     try {
-      await html5QrCode.current.start(
-        selectedCamera,
-        {
-          fps: 20,
-          qrbox: { width: 280, height: 150 },
-          aspectRatio: 1.0
-        },
-        (decodedText) => {
-          onScanSuccess(decodedText)
-        },
-        (errorMessage) => {}
-      )
+      // Ensure element exists
+      const readerElement = document.getElementById('reader')
+      if (!readerElement) throw new Error('Elemento de visualização não encontrado.')
+
+      if (html5QrCode.current) {
+        await html5QrCode.current.stop().catch(() => {})
+      }
+      
+      html5QrCode.current = new Html5Qrcode('reader')
+      
+      const config = {
+        fps: 20,
+        qrbox: { width: 280, height: 150 },
+        aspectRatio: 1.0
+      }
+
+      // Try starting with selected ID, fallback to environment mode
+      try {
+        await html5QrCode.current.start(
+          selectedCamera || { facingMode: "environment" },
+          config,
+          (decodedText) => onScanSuccess(decodedText)
+        )
+        setIsScanning(true)
+      } catch (innerErr) {
+        console.warn('Falha com ID, tentando modo ambiente...', innerErr)
+        await html5QrCode.current.start(
+          { facingMode: "environment" },
+          config,
+          (decodedText) => onScanSuccess(decodedText)
+        )
+        setIsScanning(true)
+      }
     } catch (err) {
-      console.error(err)
+      console.error('Erro fatal ao iniciar scanner:', err)
+      setMessage(`Erro na câmera: ${err.message || 'Verifique as permissões'}`)
       setIsScanning(false)
-      setMessage('Erro ao iniciar câmera.')
+    } finally {
+      setCameraLoading(false)
     }
   }
 
   const stopScanner = async () => {
-    if (html5QrCode.current && isScanning) {
+    if (html5QrCode.current) {
       try {
         await html5QrCode.current.stop()
         setIsScanning(false)
       } catch (err) {
-        console.error(err)
+        console.error('Erro ao parar scanner:', err)
+        setIsScanning(false) // Force state update
       }
     }
   }
@@ -195,8 +226,14 @@ export default function Scanner() {
             {!isScanning && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '350px', background: '#0f172a', color: 'white' }}>
                 <Camera size={64} style={{ marginBottom: '20px', opacity: 0.2 }} />
-                <button onClick={startScanner} className="btn-primary" style={{ padding: '15px 40px' }}>
-                  <Play size={20} /> INICIAR CÂMERA
+                <button 
+                  onClick={startScanner} 
+                  className="btn-primary" 
+                  disabled={cameraLoading}
+                  style={{ padding: '15px 40px' }}
+                >
+                  {cameraLoading ? <Loader2 size={20} className="spin" /> : <Play size={20} />} 
+                  {cameraLoading ? ' LIGANDO CÂMERA...' : ' INICIAR CÂMERA'}
                 </button>
               </div>
             )}
