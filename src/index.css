@@ -1,14 +1,15 @@
 :root {
-  --primary-color: #2d5a27;
-  --primary-light: #4c8c43;
-  --secondary-color: #8ba888;
-  --accent-color: #f2a900;
-  --bg-color: #f9fbfa;
-  --text-color: #1a1a1a;
-  --text-muted: #666;
-  --border-radius: 14px;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --primary-color: #1e40af; /* Blue 800 - Professional Corporate Blue */
+  --primary-light: #3b82f6; /* Blue 500 */
+  --secondary-color: #64748b; /* Slate 500 */
+  --accent-color: #f59e0b; /* Amber 500 */
+  --bg-color: #f8fafc; /* Slate 50 - clean and crisp */
+  --text-color: #0f172a; /* Slate 900 - readable and modern */
+  --text-muted: #475569; /* Slate 600 */
+  --border-radius: 16px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -22,7 +23,7 @@
 body {
   background-color: var(--bg-color);
   color: var(--text-color);
-  line-height: 1.5;
+  line-height: 1.6;
   overflow-x: hidden;
 }
 
@@ -36,68 +37,147 @@ button {
   cursor: pointer;
   border: none;
   border-radius: var(--border-radius);
-  padding: 12px 24px;
+  padding: 14px 28px;
   font-weight: 700;
   font-size: 0.95rem;
   transition: var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .btn-primary {
   background-color: var(--primary-color);
   color: white;
-  box-shadow: 0 4px 12px rgba(45, 90, 39, 0.2);
+  box-shadow: 0 4px 14px 0 rgba(30, 64, 175, 0.39);
 }
 
 .btn-primary:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
+}
+
+.btn-primary:hover {
+  background-color: #1e3a8a;
+  transform: translateY(-1px);
 }
 
 .btn-outline {
   background-color: white;
-  border: 1px solid #e0eadd;
+  border: 1px solid #e2e8f0;
   color: var(--primary-color);
 }
 
 .btn-outline:active {
-  background-color: #f0f4f0;
+  background-color: #f1f5f9;
 }
 
 .card {
   background: white;
   border-radius: var(--border-radius);
-  padding: 1.5rem;
+  padding: 1.75rem;
   box-shadow: var(--shadow);
-  border: 1px solid #f0f0f0;
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 h1, h2, h3 {
-  color: var(--text-color);
-  letter-spacing: -0.5px;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  font-weight: 800;
 }
 
 .loading {
   display: flex;
-  height: 100vh;
+  height: 50vh;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--primary-color);
+  gap: 12px;
 }
 
 /* Mobile Adjustments */
 @media (max-width: 768px) {
   .container {
-    padding: 0 1rem;
+    padding: 0 1.25rem;
   }
   
-  h1 { font-size: 1.75rem; }
-  h2 { font-size: 1.4rem; }
+  h1 { font-size: 1.875rem; }
+  h2 { font-size: 1.5rem; }
   
   .card {
-    padding: 1.25rem;
+    padding: 1.5rem;
+    border-radius: 20px;
   }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Html5Qrcode Scanner Overrides */
+#reader {
+  border: none !important;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+#reader__dashboard_section_csr button,
+#reader__dashboard_section_fsr button,
+#html5-qrcode-button-camera-permission,
+#html5-qrcode-button-camera-start,
+#html5-qrcode-button-camera-stop,
+#html5-qrcode-button-file-selection {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 12px 24px !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+  margin: 10px auto !important;
+  display: block !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+#reader__dashboard_section_csr button:hover,
+#html5-qrcode-button-camera-permission:hover {
+  background-color: var(--primary-light) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
+}
+
+#reader img {
+  display: none !important; /* Hide the library logo */
+}
+
+#reader__status_span {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: var(--text-muted) !important;
+}
+
+#reader__camera_selection {
+  padding: 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  font-weight: 600 !important;
+  color: var(--text-color) !important;
+  margin-bottom: 15px !important;
+  width: 100% !important;
+  max-width: 300px !important;
+}
+
+/* Hide the 'Scan an image file' link since we want camera-first */
+#reader__dashboard_section_csr > div > span:last-child {
+  display: none !important;
 }
